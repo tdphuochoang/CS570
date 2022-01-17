@@ -1,0 +1,75 @@
+
+Please answer the following questions to explain your implementation (Directly write your answer below the questions).
+
+1. Which are the critical regions need to be protected for mutula exclusion? Why are they? 
+The critical region that needed to be protected is the buffer. The buffer contains the array
+where to insert/remove numbers as well as keeping track the indices where the next insert or remove
+operation has to be done.
+
+If the buffer is not protected, a race condition occurs. This means that the indices will be messed
+up and insertion and production of number are going to be misplaced.
+
+2. There are 7 requirements your program should achieve: 
+
+1)	When a producer thread inserts a new item into the buffer, 
+a message should be print to screen showing which thread (with ID) 
+insert which item (with value) to which buffer slot (with next_in)
+
+2)	When a consumer thread removes a new item from the buffer, a message should be print 
+to screen showing which thread (with ID) remove which item (with value) from which buffer slot (with next_out)
+
+3)	Producers must block if the buffer is full,
+
+4)	Consumers must block if the buffer is empty,
+
+5)	No two/more producers insert items to the same buffer slot,
+
+6)	No two/more consumers remove the items from the same buffer slot,
+
+7)	The messages must be printed in the order showing the real execution scenarios.
+
+Please explain how they are satisfied in your design (you need to explain one by one!)
+
+1) The code for insertion has already been provided and works fine. Based from the given code the only thing
+that is lacking is to make producers wait when the buffer is full and to use a mutex
+to protect the buffer from race condition. Insertion follows a circular pattern, it uses a next_in
+variable that keeps track which index to insert next. If it reaches the last index, it will go to the first index
+to continue the cycle. If the next_in index reaches the next_out index, it means the buffer is full. 
+However the indices are not the basis for the code to know if the buffer is full. The program uses a 
+semaphore to know if the buffer is full. This will be explained in #3.
+
+2) The code for removal has already been provided and works fine. Just like #1, the only missing thing
+is to make the consumers wait when the buffer is empty and to use a mutex to protect the buffer
+from race condition. Just line insertion, removal also follows a circular pattern, it uses a next_out
+variable to keep track which index to remove next. If it reaches the last index, it will go to the first index
+to continue the cycle. If the next_out reaches the next_in index, it means the buffer is empty.
+However the indices are not the basis for the code to know if the buffer is empty. The program uses
+a semaphore to know if the buffer is empty. This will be explained in #4
+
+3) Before the program starts a number of producer semaphores is initialized based on the buffer size. Whenever
+a producer attempts to write on the buffer, it will first get 1 semaphore from the list of producer semaphores.
+If there is none available, then that means all producer semaphores is used which also means the buffer is full. The
+producer who never got a semaphore will be forced to wait and will be signalled to continue when a consumer
+consumes a value from the buffer.
+
+A producer who got a semaphore will write unto the buffer and gives a signal to the consumers which they can
+use to indicate that the buffer is not empty.
+
+4) Before the program starts an empty list of consumer semaphores are initialized. Whenever a consumer attempts to
+read a value from the buffer, it will first get 1 semaphore from the list of consumer semaphores.
+If there is none available, then that means the buffer is empty and it is forced to wait. The consumer
+will only continue when it receives a signal from the producer that a value has been inserted.
+
+A consumer who got a semaphore will consume a value from the buffer and gives a signal to the producer which they
+can use to indicate that the buffer is not full.
+
+3) Why you think your design is the most effective one? Is there any other design also works but less effective? 
+My design is most effective than other solutions available because it will not consume enough CPU power and
+I used libraries that are used in the industry for thread-safety. In other words, these libraries are well
+tested and gives high confidence they do their job.
+
+Yes, there are other designs that also work but less effective. For example, it is possible to not use a semaphore
+to make producer/consumer wait. The alternative is to use a spinning loop which keeps on looping to check
+for every interval if the buffer is empty or full. This will work but will consume CPU power, although it is possible
+to slow down the loop but the response time is not going to be as effective as using a semaphore.
+

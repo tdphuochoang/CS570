@@ -1,0 +1,62 @@
+
+Please answer the following questions to explain your implementation (Directly write your answer below the questions).
+
+
+
+1. Which are the critical regions need to be protected for mutula exclusion? Why are they? 
+
+The critical region needs to be protected for mutual exclusion is the buffer. The buffer is a finite size array which keeps track on the items which is shared to both producers
+and consumers. If the buffer is not protected, the race condition may occur. It means two or more processes can simultaneously access to some data in the buffer. This can cause 
+the misplace of insertion numbers and mess up the array.  
+
+
+
+
+2. There are 7 requirements your program should achieve: 
+
+1)	When a producer thread inserts a new item into the buffer, a message should be print to screen showing which thread (with ID) insert which item (with value) to which buffer slot (with next_in)
+2)	When a consumer thread removes a new item from the buffer, a message should be print to screen showing which thread (with ID) remove which item (with value) from which buffer slot (with next_out)
+3)	Producers must block if the buffer is full,
+4)	Consumers must block if the buffer is empty,
+5)	No two/more producers insert items to the same buffer slot,
+6)	No two/more consumers remove the items from the same buffer slot,
+7)	The messages must be printed in the order showing the real execution scenarios.
+
+Please explain how they are satisfied in your design (you need to explain one by one!)
+
+1) In the insertion part, the message or notification is extremely important because it lets us know which item is inserted by which thread to exactly which indexes in 
+the buffer. By doing this, we keep track on the process and will easily notice if a bug occurs during the process. The code to print the message is already been given and 
+works fine. The only thing that is lacking is to make producers wait when the buffer is full and to use a mutex to protect the buffer from race condition.
+
+2) Similar to #1, it is important to print out the information about which thread removes which items from which buffer slot because we can control which slot is empty after the removal,
+so it can be available for the new insertion. Just like the insertion part, the code to print the message is already been provided and works fine. The only thing that is lacking
+is to make the consumers wait when the buffer is empty and to use a mutex to protect the buffer from race condition. 
+
+3) A number of producer semaphores is initilized at the start of the program based on the buffer size. Whenever a producer attempts to write on the buffer, it will first 
+get 1 semaphore from the list of producer semaphores. If there is none available, it means all the producer semaphores are used and the buffer is full. pthread_mutex_lock()
+is then used to lock until the mutex becomes available. The producer who does not get a semaphore will wait until it receives a signal that a consumer remove an item from the buffer.
+
+4) A number of consumer semaphores is initilized at the start of the program based on the buffer size. Whenever a consumer attempts to consume a value from the buffer, it will first 
+get 1 semaphore from the list of consumer semaphores. If there is none available, it means the buffer is empty. For each consumer, it will wait on semaphore until the buffer
+is not empty, locks the buffer, and extract the value. The consumer then displays the result, unlock the buffer, and notify the producers that the buffer is not full. 
+
+5) We use the mutex here to avoid the race condition happen. In detail, before a producer can have access to the buffer, it must lock the buffer. pthread_mutex_lock() is used
+to lock the buffer. After the producer finishes using the buffer, it will unlock the buffer and notify the consumer. It means the slot being used is locked and untouchable until the slot is empty.
+This part prevents two or more producers insert the item into the same buffer slot. 
+
+6) Similar to #5, before a consumer can have access to the buffer, it must lock the buffer. After the consumer finishes using the buffer, it will unlock the buffer and notify
+the producer that the slot is empty. It means the slot being used is locked and cannot be accessed by other consumers.
+
+7) Similar to #1 and #2, each part of execution requires a message to keep us on track of what is happening. In detail, whenever a producer or a consumer starts inserting or 
+removing an item, a message will be printed out to notify us about the event. Also, a message will be printed out telling us which thread is handling which item in which specific
+indexes in the buffer. Printing out messages will keep us on track with the real execution scenarios.    
+
+
+
+3) Why you think your design is the most effective one? Is there any other design also works but less effective? 
+In fact, we can use a semaphore to make the producer/consumer wait. We can also use a spinning loop which keeps on looping to check for every interval if the buffer 
+is empty or full. However, the processing time will not be as effective as using a semaphore. Also, it will consumer more CPU power. 
+
+
+
+

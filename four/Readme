@@ -1,0 +1,23 @@
+Please elaborate how you implement your FIFO and LRU replacement algorithm.
+You need to explain your design, not just paste source code here ... 
+
+FIFO()
+To implement the FIFO page replacement algorithm:
+* First intitialize required variables and page frame pointer.
+* Set the default value of flag to 0.
+* For each frame, compare the requested page to the existing content of PageFrameList
+* As page found, flag is turned 1
+* If the page does not exist in frame, place that page in the jth location in PageFrameList
+* Update the j for next cycle and increment counter for page fault.
+
+LRU()
+To implement the LRU page replacement algorithm:
+* First intitialize required variables and page frame pointer.
+* Set the default value of flag to 0.
+* For each frame, compare the requested page to the existing content of PageFrameList
+* As page found, flag is turned 1
+* If there is no empty slot is found then we sort for the LRU page. 
+* Check on the previous value of current frame to find the LRU page. 
+* Put the requested page where the status is 0. 
+
+
